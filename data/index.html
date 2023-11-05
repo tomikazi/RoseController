@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="app.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+
+  <script src="jquery.js"></script>
+  <title>Rose Controller</title>
+
+  <script>
+    $(document).ready(function () {
+      let ws, lastHeard;
+
+      function process(d) {
+        $('#version').html(d.version);
+
+        console.log(d);
+        light('spotlight', d.spotlight);
+        light('pixielight', d.pixielight);
+        light('domelight', d.domelight);
+        light('allLights', d.spotlight && d.pixielight && d.domelight);
+
+        $('#petal').html('Drop Next Petal (' + d.petals + ')').blur();
+        $('#resetState').blur();
+      }
+
+      function light(n, on) {
+        let el = $('#' + n);
+        on ? el.addClass('green') : el.removeClass('green');
+        el.blur();
+      }
+
+      function send(cmd) {
+        if (ws && ws.readyState === 1) {
+          console.log('Command: ', cmd);
+          ws.send(cmd);
+        }
+      }
+
+      function markLive(on) {
+        $('#error').html(on ? '&nbsp;' : 'Disconnected').css('color', '#ffaf00');
+      }
+
+      function startWebSocket() {
+        lastHeard = new Date().getTime();
+        let port = location.port ? (parseInt(location.port) + 1) : 81;
+        ws = new WebSocket('ws://' + location.hostname + ':' + port + '/', ['arduino']);
+        console.log('Starting WebSocket', ws);
+
+        ws.onopen = function () {
+          console.log('WebSocket connected');
+          markLive(true);
+          send("get");
+        };
+
+        ws.onerror = function (error) {
+          connectionLost('WebSocket error ' + error);
+        };
+
+        ws.onmessage = function (e) {
+          lastHeard = new Date().getTime();
+          let d = JSON.parse(e.data);
+          console.log('Got message', d);
+          if (d.version) {
+            process(d);
+          }
+        };
+      }
+
+      function checkWebSocket() {
+        if (ws && ws.readyState !== 1) {
+          connectionLost('WebSocket went stale...');
+          markLive(false);
+          ws.close();
+          startWebSocket();
+        }
+      }
+
+      function connectionLost(m) {
+        console.log(m || 'Connection error');
+        markLive(false);
+      }
+
+      $('#error').click(function () {
+        if (!ws || ws.readyState !== 1) {
+          startWebSocket();
+        }
+      });
+
+      $('button').click(function (e) {
+        let f = this.value + ' ' + (this.classList.contains('green') ? 'off' : 'on');
+        send(f);
+      });
+
+      startWebSocket();
+      setInterval(checkWebSocket, 3000);
+    });
+  </script>
+
+  <style>
+    body {
+      margin: 0px;
+      background: #444;
+      font-family: Arial, Helvetica, Sans-Serif, serif;
+    }
+
+    .ui-content {
+      text-align: center;
+    }
+
+    #title {
+      font-size: 32px;
+      font-weight: bold;
+      color: #ccc;
+    }
+
+    #error {
+      position: relative;
+      display: inline-block;
+      width: 300px;
+      height: 32px;
+      padding: 8px 8px 0px 8px;
+      background-color: #444;
+      color: #ffaf00;
+      font-size: 18px;
+    }
+
+    .button {
+      background-color: #ccc;
+      border: none;
+      color: #444;
+      padding: 8px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      border-radius: 8px;
+      margin: 4px 2px;
+      width: 250px;
+    }
+
+    .actioncontainer img {
+      width: 192px;
+    }
+
+    .button:focus {
+      background-color: #2196F3;
+      color: #ccc;
+      outline-style: none;
+    }
+
+    #settings {
+      margin: 48px 16px 16px 16px;
+    }
+
+    #version {
+      font-style: italic;
+      color: #aaa;
+    }
+
+    .red {
+      background-color: firebrick;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .green {
+      background-color: green;
+      color: #fff;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+<div data-role="main" class="ui-content">
+  <p>
+  <div id="title">Beast Rose</div>
+  <p>
+  <p>
+  <div id="error"></div>
+  <br>
+  <div class="actioncontainer">
+    <button id="petal" class="button" value="dropNextPetal">Drop Next Petal</button>
+    <p><br>
+      <button id="spotlight" class="button" value="spotLight">Spot Light</button>
+      <br>
+      <button id="pixielight" class="button" value="pixieLight">Pixie Light</button>
+      <br>
+      <button id="domelight" class="button" value="domeLight">Dome Light</button>
+      <br>
+
+    <p><br>
+      <button id="allLights" class="button" value="allLights">All Lights</button>
+
+    <p><br>
+      <button id="resetState" class="button red" value="resetState">Reset State</button>
+      <br>
+    <p>
+  </div>
+  <p>
+  <div>
+    <p>
+    <div id="settings"><a href="/update" border="0"><img src="gears.png"/></a></div>
+    <div id="version">2023.10.16.001</div>
+  </div>
+</body>
+</html>
+
