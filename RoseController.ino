@@ -39,14 +39,15 @@ typedef struct Light {
 } Light;
 
 Light spotLight = {.pin = 25, .on = false};
-Light pixieLight = {.pin = 26, .on = false};
 Light domeLight = {.pin = 27, .on = false};
+Light pixieLight = {.pin = 26, .on = false};
 
 WebSocketsServer wsServer(81);
 
 void setup() {
     gizmo.beginSetup(ROSE_CONTROLLER, SW_VERSION, PASSKEY);
     gizmo.setUpdateURL(SW_UPDATE_URL, onUpdate);
+    gizmo.httpServer()->on("/state", handleState);
     gizmo.httpServer()->on("/spot", handleSpot);
     gizmo.httpServer()->on("/dome", handleDome);
     gizmo.httpServer()->on("/pixie", handlePixie);
@@ -68,8 +69,8 @@ void onUpdate() {
 
 void setupSwitches() {
     pinMode(spotLight.pin, OUTPUT);
-    pinMode(pixieLight.pin, OUTPUT);
     pinMode(domeLight.pin, OUTPUT);
+    pinMode(pixieLight.pin, OUTPUT);
 }
 
 void setupServos() {
@@ -103,38 +104,43 @@ void loop() {
     handleServos();
 }
 
+void handleState() {
+    gizmo.httpServer()->send(200, "text/plain", getState());
+}
+
 void handleSpot() {
-    WebServer *server = gizmo.httpServer();
     controlLight(&spotLight, !spotLight.on);
-    server->send(200, "text/plain", spotLight.on  ? "on" : "off");
+    gizmo.httpServer()->send(200, "text/plain", getState());
     broadcastState();
 }
 
 void handleDome() {
-    WebServer *server = gizmo.httpServer();
     controlLight(&domeLight, !domeLight.on);
-    server->send(200, "text/plain", domeLight.on  ? "on" : "off");
+    gizmo.httpServer()->send(200, "text/plain", getState());
     broadcastState();
 }
 
 void handlePixie() {
-    WebServer *server = gizmo.httpServer();
     controlLight(&pixieLight, !pixieLight.on);
-    server->send(200, "text/plain", pixieLight.on  ? "on" : "off");
+    gizmo.httpServer()->send(200, "text/plain", getState());
     broadcastState();
 }
 
 void handlePetal() {
-    WebServer *server = gizmo.httpServer();
     if (remainingPetals == 0 && !spotLight.on && !domeLight.on && !pixieLight.on) {
         resetState();
     } else {
         dropNextPetal();
     }
-    char rem[8];
-    snprintf(rem, 7, "%d", remainingPetals);
-    server->send(200, "text/plain", rem);
+    gizmo.httpServer()->send(200, "text/plain", getState());
     broadcastState();
+}
+
+static char state[16];
+
+char *getState() {
+    snprintf(state, 16, "%d%d%d%d", spotLight.on, domeLight.on, pixieLight.on, remainingPetals);
+    return state;
 }
 
 void handleServos() {
@@ -178,8 +184,8 @@ void controlLight(Light *light, bool on) {
 void resetState() {
     Serial.printf("Reset state\n");
     controlLight(&spotLight, false);
-    controlLight(&pixieLight, false);
     controlLight(&domeLight, false);
+    controlLight(&pixieLight, false);
     remainingPetals = ARRAY_SIZE(petals);
 }
 
@@ -210,10 +216,10 @@ void processCommand(char *cmd) {
 
     } else if (!strncmp(cmd, "spotLight ", 9)) {
         controlLight(&spotLight, !strcmp(cmd + 10, "on"));
-    } else if (!strncmp(cmd, "pixieLight ", 10)) {
-        controlLight(&pixieLight, !strcmp(cmd + 11, "on"));
     } else if (!strncmp(cmd, "domeLight ", 9)) {
         controlLight(&domeLight, !strcmp(cmd + 10, "on"));
+    } else if (!strncmp(cmd, "pixieLight ", 10)) {
+        controlLight(&pixieLight, !strcmp(cmd + 11, "on"));
 
     } else if (!strncmp(cmd, "allLights ", 9)) {
         controlLight(&spotLight, !strcmp(cmd + 10, "on"));

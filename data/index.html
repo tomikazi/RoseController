@@ -17,8 +17,8 @@
 
         console.log(d);
         light('spotlight', d.spotlight);
-        light('pixielight', d.pixielight);
         light('domelight', d.domelight);
+        light('pixielight', d.pixielight);
         light('allLights', d.spotlight && d.pixielight && d.domelight);
 
         $('#petal').html('Drop Next Petal (' + d.petals + ')').blur();
@@ -185,9 +185,9 @@
     <p><br>
       <button id="spotlight" class="button" value="spotLight">Spot Light</button>
       <br>
-      <button id="pixielight" class="button" value="pixieLight">Pixie Light</button>
-      <br>
       <button id="domelight" class="button" value="domeLight">Dome Light</button>
+      <br>
+      <button id="pixielight" class="button" value="pixieLight">Pixie Light</button>
       <br>
 
     <p><br>
