@@ -38,9 +38,9 @@ typedef struct Light {
     bool on;
 } Light;
 
-Light spotLight = {.pin = 25, .on = false};
-Light domeLight = {.pin = 27, .on = false};
-Light pixieLight = {.pin = 26, .on = false};
+Light spotLight = {.pin = 27, .on = false};
+Light domeLight = {.pin = 26, .on = false};
+Light pixieLight = {.pin = 25, .on = false};
 
 WebSocketsServer wsServer(81);
 
