@@ -8,13 +8,13 @@
 
 #define ROSE_CONTROLLER "RoseController"
 #define SW_UPDATE_URL   "http://iot.vachuska.com/RoseController.ino.bin"
-#define SW_VERSION      "2023.10.16.001"
+#define SW_VERSION      "2023.11.22.001"
 
 #define ARRAY_SIZE(A) (sizeof(A) / sizeof((A)[0]))
 
 #define START_POS     0
 #define PULL_POS     60
-#define MOVE_MS     500
+#define MOVE_MS    1000
 
 typedef struct Petal {
     int pin;
